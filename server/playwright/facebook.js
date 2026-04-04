@@ -19,13 +19,42 @@ async function getSession() {
   return data;
 }
 
+function normalizeCookies(raw) {
+  // Handles Cookie Editor export format → Playwright format
+  return raw
+    .filter(c => c.name && c.value !== undefined)
+    .map(c => {
+      const cookie = {
+        name: c.name,
+        value: String(c.value),
+        domain: c.domain || '.facebook.com',
+        path: c.path || '/',
+        secure: c.secure || false,
+        httpOnly: c.httpOnly || false,
+      };
+      // Cookie Editor uses "expirationDate", Playwright uses "expires"
+      if (c.expirationDate) cookie.expires = Math.floor(c.expirationDate);
+      if (c.expires) cookie.expires = Math.floor(c.expires);
+      // sameSite must be Strict | Lax | None
+      if (c.sameSite) {
+        const ss = String(c.sameSite);
+        if (['Strict', 'Lax', 'None'].includes(ss)) cookie.sameSite = ss;
+        else if (ss.toLowerCase() === 'no_restriction') cookie.sameSite = 'None';
+        else if (ss.toLowerCase() === 'lax') cookie.sameSite = 'Lax';
+        else if (ss.toLowerCase() === 'strict') cookie.sameSite = 'Strict';
+      }
+      return cookie;
+    });
+}
+
 async function launchBrowser(session) {
-  let cookies = [];
+  let rawCookies = [];
   try {
-    cookies = JSON.parse(session.cookies);
+    rawCookies = JSON.parse(session.cookies);
   } catch {
     throw new Error('Invalid session cookies format');
   }
+  const cookies = normalizeCookies(rawCookies);
 
   const browser = await chromium.launch({
     headless: true,
@@ -280,12 +309,15 @@ async function syncGroups() {
 }
 
 async function verifySession(cookiesJson, userAgent) {
-  let cookies;
+  let rawCookies;
   try {
-    cookies = JSON.parse(cookiesJson);
+    rawCookies = JSON.parse(cookiesJson);
+    if (!Array.isArray(rawCookies)) throw new Error('Must be array');
   } catch {
     throw new Error('Invalid JSON format for cookies');
   }
+
+  const cookies = normalizeCookies(rawCookies);
 
   const browser = await chromium.launch({
     headless: true,
