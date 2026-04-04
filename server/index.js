@@ -8,22 +8,9 @@ const { startScheduler } = require('./scheduler/index');
 const app = express();
 const server = http.createServer(app);
 
-// CORS — allow Netlify frontend + localhost dev
-const allowedOrigins = [
-  process.env.FRONTEND_URL,
-  'http://localhost:3000',
-  'http://localhost:5173',
-].filter(Boolean);
-
+// CORS — allow all origins (auth is handled via Bearer token)
 app.use(cors({
-  origin: (origin, callback) => {
-    if (!origin || allowedOrigins.includes(origin) ||
-        (process.env.NODE_ENV !== 'production')) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
+  origin: true,
   credentials: true,
 }));
 
