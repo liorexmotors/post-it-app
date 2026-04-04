@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm --version)",
+      "Bash(cmd.exe /c \"node --version && npm --version\")",
+      "Bash(cmd.exe /c \"where node\")",
+      "mcp__mcp-registry__search_mcp_registry",
+      "mcp__b122b05c-5e43-4b75-8cf3-feb6cf308a2f__get_project_url",
+      "mcp__b122b05c-5e43-4b75-8cf3-feb6cf308a2f__get_publishable_keys"
+    ]
+  }
+}

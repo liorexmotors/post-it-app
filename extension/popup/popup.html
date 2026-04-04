@@ -1,0 +1,138 @@
+﻿<!DOCTYPE html>
+<html dir="rtl" lang="he">
+<head>
+  <meta charset="UTF-8">
+  <title>POST-IT</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      width: 280px;
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: #0f172a;
+      color: #f1f5f9;
+      direction: rtl;
+    }
+    .header {
+      background: linear-gradient(135deg, #1e3a8a, #1d4ed8);
+      padding: 16px;
+      text-align: center;
+    }
+    .logo {
+      font-size: 22px;
+      font-weight: bold;
+      color: white;
+      letter-spacing: 1px;
+    }
+    .logo span { color: #60a5fa; }
+    .status-section { padding: 16px; }
+    .status-badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 14px;
+      border-radius: 8px;
+      margin-bottom: 12px;
+      font-size: 14px;
+      font-weight: 500;
+    }
+    .status-badge.connected {
+      background: rgba(34, 197, 94, 0.15);
+      border: 1px solid rgba(34, 197, 94, 0.3);
+      color: #86efac;
+    }
+    .status-badge.disconnected {
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      color: #fca5a5;
+    }
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+    .dot.green { background: #22c55e; animation: pulse 2s infinite; }
+    .dot.red { background: #ef4444; }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+    .btn {
+      display: block;
+      width: 100%;
+      padding: 10px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      margin-bottom: 8px;
+      transition: all 0.2s;
+      text-decoration: none;
+      text-align: center;
+    }
+    .btn-primary {
+      background: #1d4ed8;
+      color: white;
+    }
+    .btn-primary:hover { background: #1e40af; }
+    .btn-secondary {
+      background: rgba(255,255,255,0.08);
+      color: #cbd5e1;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    .btn-secondary:hover { background: rgba(255,255,255,0.12); }
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .divider {
+      height: 1px;
+      background: rgba(255,255,255,0.08);
+      margin: 12px 0;
+    }
+    .footer {
+      padding: 10px 16px;
+      text-align: center;
+      color: #475569;
+      font-size: 11px;
+    }
+    .info-text {
+      font-size: 12px;
+      color: #64748b;
+      text-align: center;
+      padding: 0 4px 12px;
+      line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="logo">EZ<span>Post</span></div>
+  </div>
+
+  <div class="status-section">
+    <div id="status" class="status-badge disconnected">
+      <div class="dot red" id="statusDot"></div>
+      <span id="statusText">מתחבר לשרת...</span>
+    </div>
+
+    <button class="btn btn-primary" id="openDashboard">
+      פתח לוח בקרה
+    </button>
+
+    <button class="btn btn-secondary" id="syncGroups" disabled>
+      סנכרן קבוצות פייסבוק
+    </button>
+
+    <div class="divider"></div>
+
+    <p class="info-text" id="infoText">
+      מחכה לחיבור עם השרת...
+    </p>
+  </div>
+
+  <div class="footer">POST-IT v1.0 · כל הזכויות שמורות</div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

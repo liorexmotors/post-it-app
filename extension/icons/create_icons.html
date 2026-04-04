@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<!-- Run this in browser, right-click each canvas and Save As PNG -->
+<html>
+<body>
+<canvas id="c16" width="16" height="16"></canvas>
+<canvas id="c48" width="48" height="48"></canvas>
+<canvas id="c128" width="128" height="128"></canvas>
+<script>
+function drawIcon(id, size) {
+  const c = document.getElementById(id);
+  const ctx = c.getContext('2d');
+  const r = size / 2;
+  // Background circle
+  ctx.fillStyle = '#1d4ed8';
+  ctx.beginPath();
+  ctx.arc(r, r, r, 0, Math.PI * 2);
+  ctx.fill();
+  // Letter E
+  ctx.fillStyle = 'white';
+  ctx.font = `bold ${size * 0.55}px Arial`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('E', r, r);
+}
+drawIcon('c16', 16);
+drawIcon('c48', 48);
+drawIcon('c128', 128);
+</script>
+</body>
+</html>

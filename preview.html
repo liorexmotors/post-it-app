@@ -1,0 +1,627 @@
+﻿<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>POST-IT - תצוגה מקדימה v2</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * { font-family: 'Heebo', sans-serif; }
+    body { background: #0f172a; color: #f1f5f9; }
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: #1e293b; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+    .glass { background: rgba(30,41,59,0.85); border: 1px solid rgba(255,255,255,0.06); }
+    .page { display: none; }
+    .page.active { display: block; }
+    .nav-link { transition: all .2s; }
+    .nav-link.active { background: #2563eb; color: white; }
+    .nav-link:not(.active) { color: #94a3b8; }
+    .nav-link:not(.active):hover { background: rgba(255,255,255,0.05); color: white; }
+    .badge { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 999px; font-size: 12px; font-weight: 500; }
+    .pulse { animation: pulse 2s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+    .chart-bar { transition: height .5s; }
+  </style>
+</head>
+<body class="min-h-screen">
+
+<div class="flex min-h-screen">
+
+  <!-- Sidebar -->
+  <aside class="w-56 shrink-0 glass flex flex-col h-screen sticky top-0 border-l-0 border-r border-white/5">
+    <!-- Logo -->
+    <div class="p-5 border-b border-white/5">
+      <div class="text-2xl font-black text-white">POST<span class="text-blue-400">-IT</span></div>
+      <div class="text-xs text-slate-500 mt-0.5">פרסום חכם לפייסבוק</div>
+    </div>
+
+    <!-- Extension status -->
+    <div class="px-4 py-3 border-b border-white/5">
+      <div class="flex items-center gap-2 text-xs px-3 py-2 rounded-lg bg-green-500/10 text-green-400 border border-green-500/20">
+        <span class="w-2 h-2 rounded-full bg-green-400 pulse"></span>
+        תוסף מחובר
+      </div>
+    </div>
+
+    <!-- Nav -->
+    <nav class="flex-1 p-3 space-y-1">
+      <button onclick="showPage('dashboard')" id="nav-dashboard" class="nav-link active w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-right">
+        <span>📊</span> לוח בקרה
+      </button>
+      <button onclick="showPage('create')" id="nav-create" class="nav-link w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-right">
+        <span>✏️</span> פוסט חדש
+      </button>
+      <button onclick="showPage('campaigns')" id="nav-campaigns" class="nav-link w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-right">
+        <span>📋</span> קמפיינים
+      </button>
+      <button onclick="showPage('groups')" id="nav-groups" class="nav-link w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-right">
+        <span>👥</span> קבוצות
+      </button>
+      <button onclick="showPage('settings')" id="nav-settings" class="nav-link w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-right">
+        <span>⚙️</span> הגדרות
+      </button>
+    </nav>
+
+    <div class="p-4 text-xs text-slate-600 border-t border-white/5">v1.0 · כל הזכויות שמורות</div>
+  </aside>
+
+  <!-- Main content -->
+  <main class="flex-1 overflow-auto">
+
+    <!-- ══════════════ DASHBOARD ══════════════ -->
+    <div id="page-dashboard" class="page active p-6 max-w-5xl">
+      <div class="flex items-center justify-between mb-6">
+        <div>
+          <h1 class="text-2xl font-bold text-white">לוח בקרה</h1>
+          <p class="text-slate-400 text-sm mt-1">סיכום פעילות המערכת</p>
+        </div>
+        <button onclick="showPage('create')" class="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-4 py-2.5 rounded-xl font-medium text-sm shadow-lg shadow-blue-500/20 transition-all">
+          + פוסט חדש
+        </button>
+      </div>
+
+      <!-- Stats cards -->
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div class="bg-gradient-to-br from-green-600/20 to-green-500/10 border border-green-500/20 rounded-2xl p-5">
+          <div class="text-2xl mb-2">📤</div>
+          <div class="text-3xl font-bold text-white mb-1">47</div>
+          <div class="text-sm text-slate-400">נשלחו היום</div>
+        </div>
+        <div class="bg-gradient-to-br from-blue-600/20 to-blue-500/10 border border-blue-500/20 rounded-2xl p-5">
+          <div class="text-2xl mb-2">📅</div>
+          <div class="text-3xl font-bold text-white mb-1">12</div>
+          <div class="text-sm text-slate-400">מתוזמנים</div>
+        </div>
+        <div class="bg-gradient-to-br from-purple-600/20 to-purple-500/10 border border-purple-500/20 rounded-2xl p-5">
+          <div class="text-2xl mb-2">👥</div>
+          <div class="text-3xl font-bold text-white mb-1">482</div>
+          <div class="text-sm text-slate-400">קבוצות פעילות</div>
+        </div>
+        <div class="bg-gradient-to-br from-orange-600/20 to-orange-500/10 border border-orange-500/20 rounded-2xl p-5">
+          <div class="text-2xl mb-2">✉️</div>
+          <div class="text-3xl font-bold text-white mb-1">8,512</div>
+          <div class="text-sm text-slate-400">סה״כ נשלחו</div>
+        </div>
+      </div>
+
+      <!-- Chart -->
+      <div class="glass rounded-2xl p-5 mb-5">
+        <h2 class="font-semibold text-white mb-4">פרסומים ב-7 ימים אחרונים</h2>
+        <div class="flex items-end gap-3 h-28">
+          <div class="flex flex-col items-center gap-1 flex-1">
+            <div class="w-full bg-blue-600/40 rounded-t-md" style="height:60%"></div>
+            <span class="text-xs text-slate-500">א׳</span>
+          </div>
+          <div class="flex flex-col items-center gap-1 flex-1">
+            <div class="w-full bg-blue-600/60 rounded-t-md" style="height:80%"></div>
+            <span class="text-xs text-slate-500">ב׳</span>
+          </div>
+          <div class="flex flex-col items-center gap-1 flex-1">
+            <div class="w-full bg-blue-600/40 rounded-t-md" style="height:45%"></div>
+            <span class="text-xs text-slate-500">ג׳</span>
+          </div>
+          <div class="flex flex-col items-center gap-1 flex-1">
+            <div class="w-full bg-blue-600/70 rounded-t-md" style="height:90%"></div>
+            <span class="text-xs text-slate-500">ד׳</span>
+          </div>
+          <div class="flex flex-col items-center gap-1 flex-1">
+            <div class="w-full bg-blue-600/50 rounded-t-md" style="height:65%"></div>
+            <span class="text-xs text-slate-500">ה׳</span>
+          </div>
+          <div class="flex flex-col items-center gap-1 flex-1">
+            <div class="w-full bg-blue-600 rounded-t-md" style="height:100%"></div>
+            <span class="text-xs text-slate-500">ו׳</span>
+          </div>
+          <div class="flex flex-col items-center gap-1 flex-1">
+            <div class="w-full bg-blue-600/30 rounded-t-md" style="height:30%"></div>
+            <span class="text-xs text-slate-500">ש׳</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Recent posts -->
+      <div class="glass rounded-2xl overflow-hidden">
+        <div class="px-5 py-4 border-b border-white/5 flex items-center justify-between">
+          <h2 class="font-semibold text-white">פוסטים אחרונים</h2>
+          <button onclick="showPage('campaigns')" class="text-blue-400 hover:text-blue-300 text-sm transition-colors">כל הפוסטים ←</button>
+        </div>
+        <div class="divide-y divide-white/5">
+          <!-- Post 1 -->
+          <div class="px-5 py-4 hover:bg-white/3 transition-colors">
+            <div class="flex items-start justify-between gap-4">
+              <div class="flex-1">
+                <div class="flex items-center gap-2 mb-1">
+                  <span class="badge bg-green-500/20 text-green-300">נשלח ✓</span>
+                  <span class="badge bg-purple-500/20 text-purple-300">🖼️ תמונה</span>
+                  <span class="badge bg-teal-500/20 text-teal-300">🔄 מחזורי</span>
+                </div>
+                <p class="text-white text-sm font-medium">דירה 4 חדרים ברמת גן - כניסה מיידית! מחיר מבצע...</p>
+                <div class="flex gap-3 mt-1 text-xs text-slate-500">
+                  <span>📅 04/04/2026 10:00</span>
+                  <span>👥 9/9 קבוצות</span>
+                </div>
+              </div>
+              <div class="flex gap-2 shrink-0">
+                <button class="text-xs bg-red-500/10 hover:bg-red-500/20 text-red-400 px-3 py-1.5 rounded-lg transition-colors">מחק</button>
+              </div>
+            </div>
+          </div>
+          <!-- Post 2 -->
+          <div class="px-5 py-4 hover:bg-white/3 transition-colors">
+            <div class="flex items-start justify-between gap-4">
+              <div class="flex-1">
+                <div class="flex items-center gap-2 mb-1">
+                  <span class="badge bg-blue-500/20 text-blue-300">מתוזמן</span>
+                  <span class="badge bg-orange-500/20 text-orange-300">קמפיין קיץ</span>
+                </div>
+                <p class="text-white text-sm font-medium">מבצע קיץ! הנחה של 20% על כל השירותים עד סוף החודש...</p>
+                <div class="flex gap-3 mt-1 text-xs text-slate-500">
+                  <span>📅 05/04/2026 09:30</span>
+                  <span>👥 0/15 קבוצות</span>
+                </div>
+              </div>
+              <div class="flex gap-2 shrink-0">
+                <button class="text-xs bg-blue-600/20 hover:bg-blue-600/40 text-blue-300 px-3 py-1.5 rounded-lg transition-colors">שלח עכשיו</button>
+                <button class="text-xs bg-red-500/10 hover:bg-red-500/20 text-red-400 px-3 py-1.5 rounded-lg transition-colors">מחק</button>
+              </div>
+            </div>
+          </div>
+          <!-- Post 3 -->
+          <div class="px-5 py-4 hover:bg-white/3 transition-colors">
+            <div class="flex items-start justify-between gap-4">
+              <div class="flex-1">
+                <div class="flex items-center gap-2 mb-1">
+                  <span class="badge bg-yellow-500/20 text-yellow-300">שולח...</span>
+                  <span class="badge bg-purple-500/20 text-purple-300">🎬 וידאו</span>
+                </div>
+                <p class="text-white text-sm font-medium">סרטון: הצגת הפרויקט החדש שלנו — 50 יחידות בלבד!</p>
+                <div class="flex gap-3 mt-1 text-xs text-slate-500">
+                  <span>📅 04/04/2026 08:00</span>
+                  <span>👥 6/9 קבוצות</span>
+                </div>
+              </div>
+              <div class="flex gap-2 shrink-0">
+                <button class="text-xs bg-red-500/10 hover:bg-red-500/20 text-red-400 px-3 py-1.5 rounded-lg transition-colors">מחק</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════ CREATE POST ══════════════ -->
+    <div id="page-create" class="page p-6 max-w-5xl">
+      <div class="mb-6">
+        <h1 class="text-2xl font-bold text-white">יצירת פוסט חדש</h1>
+        <p class="text-slate-400 text-sm mt-1">מלא את הפרטים ובחר קבוצות לפרסום</p>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Left -->
+        <div class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-slate-300 mb-1.5">שם לזיהוי (אופציונלי)</label>
+            <input type="text" value="קמפיין קיץ - נדל״ן" class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-blue-500" placeholder="למשל: קמפיין קיץ - נדל״ן">
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-slate-300 mb-1.5">תוכן הפוסט *</label>
+            <textarea rows="7" class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm resize-none focus:outline-none" placeholder="כתוב את הפוסט כאן...">🏠 דירה מדהימה 4 חדרים ברמת גן!
+
+✅ 110 מ"ר + מרפסת 15 מ"ר
+✅ קומה 5 עם מעלית
+✅ חניה + מחסן
+✅ כניסה מיידית
+
+מחיר: 2,950,000 ₪ בלבד
+
+📞 לפרטים ותיאום סיור: 052-1234567</textarea>
+            <div class="flex items-center justify-between mt-2">
+              <span class="text-xs text-slate-500">287 תווים</span>
+              <div class="flex items-center gap-2">
+                <select class="text-xs bg-white/5 border border-white/10 rounded-lg px-2 py-1.5 text-slate-300 focus:outline-none">
+                  <option>חברותי</option>
+                  <option>מקצועי</option>
+                  <option>שיווקי</option>
+                </select>
+                <button class="flex items-center gap-1.5 text-xs bg-purple-600/20 hover:bg-purple-600/40 text-purple-300 border border-purple-500/20 px-3 py-1.5 rounded-lg transition-all">
+                  ✨ שדרג עם AI
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Media preview -->
+          <div>
+            <label class="block text-sm font-medium text-slate-300 mb-1.5">תמונה / וידאו</label>
+            <div class="relative rounded-xl overflow-hidden border border-white/10 bg-white/5">
+              <div class="h-36 flex items-center justify-center bg-gradient-to-br from-blue-900/30 to-purple-900/30">
+                <div class="text-center">
+                  <div class="text-4xl mb-2">🏠</div>
+                  <div class="text-slate-400 text-sm">תמונת נכס.jpg</div>
+                  <div class="text-slate-500 text-xs mt-1">2.4 MB</div>
+                </div>
+              </div>
+              <div class="absolute bottom-2 right-2 bg-black/60 text-white text-xs px-2 py-1 rounded-lg">🖼️ תמונה</div>
+              <button class="absolute top-2 left-2 bg-red-500/80 text-white w-7 h-7 rounded-full flex items-center justify-center text-sm">✕</button>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-slate-300 mb-1.5">קמפיין</label>
+            <select class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none">
+              <option>קמפיין קיץ 2026</option>
+              <option>נדל״ן אפריל</option>
+              <option>ללא קמפיין</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Right -->
+        <div class="space-y-4">
+          <!-- Schedule -->
+          <div class="glass rounded-2xl p-4 space-y-3">
+            <h3 class="font-semibold text-white text-sm">⏰ תזמון</h3>
+            <div>
+              <label class="block text-xs text-slate-400 mb-1">תאריך ושעה</label>
+              <input type="text" value="2026-04-05T09:30" class="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:outline-none">
+            </div>
+            <div>
+              <label class="block text-xs text-slate-400 mb-2">חזרה על הפוסט</label>
+              <div class="grid grid-cols-4 gap-2">
+                <button class="text-xs py-2 px-1 rounded-lg bg-white/5 text-slate-400">חד פעמי</button>
+                <button class="text-xs py-2 px-1 rounded-lg bg-white/5 text-slate-400">יומי</button>
+                <button class="text-xs py-2 px-1 rounded-lg bg-blue-600 text-white font-medium">שבועי</button>
+                <button class="text-xs py-2 px-1 rounded-lg bg-white/5 text-slate-400">מותאם</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Groups -->
+          <div class="glass rounded-2xl p-4">
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="font-semibold text-white text-sm">👥 בחר קבוצות</h3>
+              <span class="text-xs text-blue-400">9 נבחרו</span>
+            </div>
+            <input type="text" placeholder="חפש קבוצה..." class="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white placeholder-slate-500 text-sm mb-2 focus:outline-none">
+            <div class="flex gap-2 mb-2">
+              <button class="text-xs text-blue-400">בחר הכל</button>
+              <span class="text-slate-600">·</span>
+              <button class="text-xs text-slate-400">נקה</button>
+            </div>
+            <div class="space-y-1 max-h-48 overflow-y-auto">
+              <label class="flex items-center gap-3 px-3 py-2 rounded-lg bg-blue-600/20 border border-blue-500/30 cursor-pointer">
+                <input type="checkbox" checked class="accent-blue-500"> <span class="text-sm text-white">נדל״ן תל אביב והמרכז</span>
+              </label>
+              <label class="flex items-center gap-3 px-3 py-2 rounded-lg bg-blue-600/20 border border-blue-500/30 cursor-pointer">
+                <input type="checkbox" checked class="accent-blue-500"> <span class="text-sm text-white">דירות להשכרה ולמכירה</span>
+              </label>
+              <label class="flex items-center gap-3 px-3 py-2 rounded-lg bg-blue-600/20 border border-blue-500/30 cursor-pointer">
+                <input type="checkbox" checked class="accent-blue-500"> <span class="text-sm text-white">רמת גן - קבוצת נדל״ן</span>
+              </label>
+              <label class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/5 border border-transparent cursor-pointer">
+                <input type="checkbox" class="accent-blue-500"> <span class="text-sm text-white">בני ברק - דירות ונכסים</span>
+              </label>
+              <label class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/5 border border-transparent cursor-pointer">
+                <input type="checkbox" class="accent-blue-500"> <span class="text-sm text-white">גוש דן - נדל״ן מקצועי</span>
+              </label>
+            </div>
+          </div>
+
+          <button class="w-full bg-blue-600 hover:bg-blue-500 text-white py-3 rounded-xl font-semibold transition-all shadow-lg shadow-blue-500/20 text-sm">
+            📅 תזמן פוסט
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════ CAMPAIGNS ══════════════ -->
+    <div id="page-campaigns" class="page p-6 max-w-5xl">
+      <div class="flex items-center justify-between mb-6">
+        <div>
+          <h1 class="text-2xl font-bold text-white">קמפיינים ופוסטים</h1>
+          <p class="text-slate-400 text-sm mt-1">24 פוסטים בסך הכל</p>
+        </div>
+        <button class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-xl text-sm font-medium transition-all">+ קמפיין חדש</button>
+      </div>
+
+      <div class="flex gap-4">
+        <!-- Sidebar -->
+        <div class="w-48 shrink-0 space-y-1">
+          <div class="w-full text-right px-3 py-2.5 rounded-xl text-sm bg-blue-600 text-white cursor-pointer">
+            <div class="font-medium">כל הפוסטים</div>
+            <div class="text-xs opacity-70">24 פוסטים</div>
+          </div>
+          <div class="w-full text-right px-3 py-2.5 rounded-xl text-sm text-slate-400 hover:bg-white/5 cursor-pointer">
+            <div class="font-medium">קמפיין קיץ 2026</div>
+            <div class="text-xs opacity-70">8 פוסטים</div>
+          </div>
+          <div class="w-full text-right px-3 py-2.5 rounded-xl text-sm text-slate-400 hover:bg-white/5 cursor-pointer">
+            <div class="font-medium">נדל״ן אפריל</div>
+            <div class="text-xs opacity-70">12 פוסטים</div>
+          </div>
+          <div class="w-full text-right px-3 py-2.5 rounded-xl text-sm text-slate-400 hover:bg-white/5 cursor-pointer">
+            <div class="font-medium">מבצעים שוטפים</div>
+            <div class="text-xs opacity-70">4 פוסטים</div>
+          </div>
+        </div>
+
+        <!-- Posts -->
+        <div class="flex-1 glass rounded-2xl overflow-hidden">
+          <div class="divide-y divide-white/5">
+            <div class="px-5 py-4 hover:bg-white/3 transition-colors">
+              <div class="flex items-start justify-between gap-4">
+                <div class="flex-1">
+                  <div class="flex items-center gap-2 mb-1 flex-wrap">
+                    <span class="badge bg-green-500/20 text-green-300">נשלח ✓</span>
+                    <span class="badge bg-purple-500/20 text-purple-300">🖼️</span>
+                    <span class="badge bg-teal-500/20 text-teal-300">🔄</span>
+                    <span class="badge bg-orange-500/20 text-orange-300">נדל״ן אפריל</span>
+                  </div>
+                  <p class="text-white text-sm font-medium">דירה 4 חדרים ברמת גן - כניסה מיידית!</p>
+                  <div class="flex gap-3 mt-1 text-xs text-slate-500">
+                    <span>📅 04/04 10:00</span><span>👥 9/9</span><span>04/04/2026</span>
+                  </div>
+                </div>
+                <button class="text-xs bg-red-500/10 text-red-400 px-3 py-1.5 rounded-lg">מחק</button>
+              </div>
+            </div>
+            <div class="px-5 py-4 hover:bg-white/3 transition-colors">
+              <div class="flex items-start justify-between gap-4">
+                <div class="flex-1">
+                  <div class="flex items-center gap-2 mb-1">
+                    <span class="badge bg-blue-500/20 text-blue-300">מתוזמן</span>
+                    <span class="badge bg-orange-500/20 text-orange-300">קמפיין קיץ</span>
+                  </div>
+                  <p class="text-white text-sm font-medium">מבצע קיץ! הנחה של 20% על כל השירותים</p>
+                  <div class="flex gap-3 mt-1 text-xs text-slate-500">
+                    <span>📅 05/04 09:30</span><span>👥 0/15</span><span>03/04/2026</span>
+                  </div>
+                </div>
+                <div class="flex gap-2">
+                  <button class="text-xs bg-blue-600/20 text-blue-300 px-3 py-1.5 rounded-lg">שלח עכשיו</button>
+                  <button class="text-xs bg-red-500/10 text-red-400 px-3 py-1.5 rounded-lg">מחק</button>
+                </div>
+              </div>
+            </div>
+            <div class="px-5 py-4 hover:bg-white/3 transition-colors">
+              <div class="flex items-start justify-between gap-4">
+                <div class="flex-1">
+                  <div class="flex items-center gap-2 mb-1">
+                    <span class="badge bg-red-500/20 text-red-300">נכשל</span>
+                    <span class="badge bg-purple-500/20 text-purple-300">🎬</span>
+                  </div>
+                  <p class="text-white text-sm font-medium">סרטון הצגת הפרויקט החדש</p>
+                  <div class="flex gap-3 mt-1 text-xs text-slate-500">
+                    <span>📅 03/04 14:00</span><span>👥 3/9</span><span>02/04/2026</span>
+                  </div>
+                </div>
+                <div class="flex gap-2">
+                  <button class="text-xs bg-blue-600/20 text-blue-300 px-3 py-1.5 rounded-lg">שלח עכשיו</button>
+                  <button class="text-xs bg-red-500/10 text-red-400 px-3 py-1.5 rounded-lg">מחק</button>
+                </div>
+              </div>
+            </div>
+            <div class="px-5 py-4 hover:bg-white/3 transition-colors">
+              <div class="flex items-start justify-between gap-4">
+                <div class="flex-1">
+                  <div class="flex items-center gap-2 mb-1">
+                    <span class="badge bg-slate-500/20 text-slate-300">ממתין</span>
+                  </div>
+                  <p class="text-white text-sm font-medium">פנטהאוז יוקרתי בהרצליה פיתוח - נוף לים!</p>
+                  <div class="flex gap-3 mt-1 text-xs text-slate-500">
+                    <span>ללא תזמון</span><span>👥 0/6</span><span>04/04/2026</span>
+                  </div>
+                </div>
+                <div class="flex gap-2">
+                  <button class="text-xs bg-blue-600/20 text-blue-300 px-3 py-1.5 rounded-lg">שלח עכשיו</button>
+                  <button class="text-xs bg-red-500/10 text-red-400 px-3 py-1.5 rounded-lg">מחק</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════ GROUPS ══════════════ -->
+    <div id="page-groups" class="page p-6 max-w-4xl">
+      <div class="flex items-center justify-between mb-6">
+        <div>
+          <h1 class="text-2xl font-bold text-white">קבוצות פייסבוק</h1>
+          <p class="text-slate-400 text-sm mt-1">482 קבוצות · 478 פעילות</p>
+        </div>
+        <div class="flex gap-3">
+          <button class="text-sm bg-red-500/10 hover:bg-red-500/20 text-red-400 px-4 py-2 rounded-xl transition-all">מחק הכל</button>
+          <button class="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-xl font-medium text-sm shadow-lg shadow-blue-500/20 transition-all">🔄 סנכרן מפייסבוק</button>
+        </div>
+      </div>
+
+      <div class="glass rounded-2xl overflow-hidden">
+        <div class="p-4 border-b border-white/5">
+          <input type="text" placeholder="חפש קבוצה..." class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white placeholder-slate-500 text-sm focus:outline-none">
+        </div>
+        <div class="divide-y divide-white/5 max-h-96 overflow-y-auto">
+          <div class="flex items-center justify-between px-5 py-3 hover:bg-white/3 transition-colors">
+            <div class="flex items-center gap-3">
+              <div class="w-2 h-2 rounded-full bg-green-400"></div>
+              <div><p class="text-white text-sm font-medium">נדל״ן תל אביב והמרכז</p><p class="text-slate-600 text-xs">/realestate.tlv</p></div>
+            </div>
+            <div class="flex items-center gap-2">
+              <button class="text-xs bg-green-500/20 text-green-400 px-3 py-1.5 rounded-lg">פעיל</button>
+              <button class="text-xs bg-red-500/10 text-red-400 w-7 h-7 rounded-lg flex items-center justify-center">✕</button>
+            </div>
+          </div>
+          <div class="flex items-center justify-between px-5 py-3 hover:bg-white/3 transition-colors">
+            <div class="flex items-center gap-3">
+              <div class="w-2 h-2 rounded-full bg-green-400"></div>
+              <div><p class="text-white text-sm font-medium">דירות להשכרה ולמכירה בגוש דן</p><p class="text-slate-600 text-xs">/gushdan.apartments</p></div>
+            </div>
+            <div class="flex items-center gap-2">
+              <button class="text-xs bg-green-500/20 text-green-400 px-3 py-1.5 rounded-lg">פעיל</button>
+              <button class="text-xs bg-red-500/10 text-red-400 w-7 h-7 rounded-lg flex items-center justify-center">✕</button>
+            </div>
+          </div>
+          <div class="flex items-center justify-between px-5 py-3 hover:bg-white/3 transition-colors">
+            <div class="flex items-center gap-3">
+              <div class="w-2 h-2 rounded-full bg-slate-600"></div>
+              <div><p class="text-white text-sm font-medium">רמת גן - קבוצת נדל״ן</p><p class="text-slate-600 text-xs">/ramat.gan.realestate</p></div>
+            </div>
+            <div class="flex items-center gap-2">
+              <button class="text-xs bg-white/5 text-slate-500 px-3 py-1.5 rounded-lg">מושבת</button>
+              <button class="text-xs bg-red-500/10 text-red-400 w-7 h-7 rounded-lg flex items-center justify-center">✕</button>
+            </div>
+          </div>
+          <div class="flex items-center justify-between px-5 py-3 hover:bg-white/3 transition-colors">
+            <div class="flex items-center gap-3">
+              <div class="w-2 h-2 rounded-full bg-green-400"></div>
+              <div><p class="text-white text-sm font-medium">בני ברק - דירות ונכסים</p><p class="text-slate-600 text-xs">/bnei.brak.property</p></div>
+            </div>
+            <div class="flex items-center gap-2">
+              <button class="text-xs bg-green-500/20 text-green-400 px-3 py-1.5 rounded-lg">פעיל</button>
+              <button class="text-xs bg-red-500/10 text-red-400 w-7 h-7 rounded-lg flex items-center justify-center">✕</button>
+            </div>
+          </div>
+          <div class="flex items-center justify-between px-5 py-3 hover:bg-white/3 transition-colors">
+            <div class="flex items-center gap-3">
+              <div class="w-2 h-2 rounded-full bg-green-400"></div>
+              <div><p class="text-white text-sm font-medium">פתח תקווה - נדל״ן מקצועי</p></div>
+            </div>
+            <div class="flex items-center gap-2">
+              <button class="text-xs bg-green-500/20 text-green-400 px-3 py-1.5 rounded-lg">פעיל</button>
+              <button class="text-xs bg-red-500/10 text-red-400 w-7 h-7 rounded-lg flex items-center justify-center">✕</button>
+            </div>
+          </div>
+          <div class="px-5 py-3 text-center text-slate-500 text-sm">... עוד 477 קבוצות</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════ SETTINGS ══════════════ -->
+    <div id="page-settings" class="page p-6 max-w-2xl">
+      <div class="mb-6">
+        <h1 class="text-2xl font-bold text-white">הגדרות</h1>
+        <p class="text-slate-400 text-sm mt-1">הגדרות מערכת ופרמטרים</p>
+      </div>
+
+      <div class="space-y-5">
+        <!-- AI -->
+        <div class="glass rounded-2xl p-5">
+          <h2 class="font-semibold text-white mb-1">✨ Claude AI</h2>
+          <p class="text-slate-400 text-xs mb-4">מפתח API לשדרוג טקסט. קבל מפתח בחינם ב-console.anthropic.com</p>
+          <div class="flex items-center gap-3">
+            <div class="flex-1 bg-green-500/10 border border-green-500/20 rounded-xl px-4 py-2.5 text-green-400 text-sm font-mono">sk-ant-****...****xK4A</div>
+            <button class="text-xs text-slate-400 hover:text-white px-3 py-2 bg-white/5 rounded-xl">החלף</button>
+          </div>
+        </div>
+
+        <!-- Anti-block -->
+        <div class="glass rounded-2xl p-5">
+          <h2 class="font-semibold text-white mb-1">🛡️ מניעת חסימות</h2>
+          <p class="text-slate-400 text-xs mb-4">הגדרות לדמיית התנהגות אנושית</p>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs text-slate-400 mb-1.5">עיכוב מינימלי (שניות)</label>
+              <input type="number" value="45" class="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:outline-none">
+            </div>
+            <div>
+              <label class="block text-xs text-slate-400 mb-1.5">עיכוב מקסימלי (שניות)</label>
+              <input type="number" value="120" class="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:outline-none">
+            </div>
+            <div>
+              <label class="block text-xs text-slate-400 mb-1.5">מקס׳ קבוצות ביום</label>
+              <input type="number" value="15" class="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:outline-none">
+            </div>
+          </div>
+          <div class="mt-4 p-3 bg-blue-500/10 border border-blue-500/20 rounded-xl text-xs text-blue-300">
+            💡 מומלץ: עיכוב 45-120 שניות ועד 15 קבוצות ביום למניעת חסימה
+          </div>
+        </div>
+
+        <!-- Quiet hours -->
+        <div class="glass rounded-2xl p-5">
+          <h2 class="font-semibold text-white mb-1">🌙 שעות שקט</h2>
+          <p class="text-slate-400 text-xs mb-4">בשעות אלו המערכת לא תשלח פוסטים</p>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs text-slate-400 mb-1.5">מ-שעה</label>
+              <select class="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:outline-none">
+                <option>02:00</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs text-slate-400 mb-1.5">עד שעה</label>
+              <select class="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:outline-none">
+                <option>07:00</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <button class="w-full bg-blue-600 hover:bg-blue-500 text-white py-3 rounded-xl font-semibold transition-all shadow-lg shadow-blue-500/20">
+          💾 שמור הגדרות
+        </button>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- Toast notification demo -->
+<div id="toast" style="display:none" class="fixed bottom-6 right-6 bg-slate-800 border border-white/10 text-white px-4 py-3 rounded-xl shadow-xl text-sm flex items-center gap-2 z-50">
+  <span id="toastIcon">✓</span>
+  <span id="toastText">הפוסט נשמר בהצלחה!</span>
+</div>
+
+<script>
+  function showPage(name) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('[id^="nav-"]').forEach(n => n.classList.remove('active'));
+    document.getElementById('page-' + name).classList.add('active');
+    document.getElementById('nav-' + name).classList.add('active');
+  }
+
+  function showToast(text, icon='✓') {
+    const t = document.getElementById('toast');
+    document.getElementById('toastText').textContent = text;
+    document.getElementById('toastIcon').textContent = icon;
+    t.style.display = 'flex';
+    setTimeout(() => t.style.display = 'none', 2500);
+  }
+
+  // Add interactivity to buttons
+  document.querySelectorAll('button').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const txt = this.textContent.trim();
+      if (txt === '📅 תזמן פוסט') showToast('הפוסט תוזמן בהצלחה! 📅');
+      if (txt === '💾 שמור הגדרות') showToast('ההגדרות נשמרו ✓');
+      if (txt === '🔄 סנכרן מפייסבוק') showToast('מסנכרן קבוצות... ⏳', '⏳');
+      if (txt === '✨ שדרג עם AI') showToast('הטקסט שודרג עם AI! ✨');
+      if (txt === 'שלח עכשיו') showToast('הפוסט נשלח לתוסף לפרסום! 🚀');
+    });
+  });
+</script>
+</body>
+</html>
