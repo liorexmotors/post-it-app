@@ -226,13 +226,16 @@ router.put('/:id', upload.array('media', 6), async (req, res) => {
     if (error) throw error;
 
     // Update groups if provided
-    if (group_ids) {
+    if (group_ids !== undefined) {
       const parsedGroupIds = JSON.parse(group_ids);
-      await supabase.from('post_groups').delete().eq('post_id', req.params.id);
+      console.log('[PUT] group_ids received:', group_ids, '→ parsed:', parsedGroupIds);
+      const { error: delErr } = await supabase.from('post_groups').delete().eq('post_id', req.params.id);
+      if (delErr) console.error('[PUT] delete error:', delErr.message);
       if (parsedGroupIds.length > 0) {
-        await supabase.from('post_groups').insert(
-          parsedGroupIds.map(gid => ({ post_id: parseInt(req.params.id), group_id: gid, status: 'pending' }))
+        const { error: insErr } = await supabase.from('post_groups').insert(
+          parsedGroupIds.map(gid => ({ post_id: parseInt(req.params.id), group_id: parseInt(gid), status: 'pending' }))
         );
+        if (insErr) throw new Error('שגיאה בשמירת קבוצות: ' + insErr.message);
       }
     }
 
