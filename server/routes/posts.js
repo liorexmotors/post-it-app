@@ -196,21 +196,46 @@ router.post('/', upload.array('media', 6), async (req, res) => {
 });
 
 // PUT update post
-router.put('/:id', async (req, res) => {
+router.put('/:id', upload.array('media', 6), async (req, res) => {
   try {
-    const { title, content, scheduled_at, recurring, recurring_days, status } = req.body;
+    const { title, content, scheduled_at, recurring, recurring_days, group_ids, remove_media } = req.body;
     const updates = {};
-    if (title !== undefined) updates.title = title;
+    if (title !== undefined) updates.title = title || null;
     if (content) updates.content = content;
     if (scheduled_at !== undefined) updates.scheduled_at = scheduled_at || null;
     if (recurring !== undefined) updates.recurring = recurring || null;
     if (recurring_days !== undefined) updates.recurring_days = recurring_days || null;
-    if (status) updates.status = status;
+    if (scheduled_at) updates.status = 'scheduled';
+
+    // Handle new media uploads
+    const files = req.files || [];
+    if (files.length > 0) {
+      const uploaded = await Promise.all(files.map(uploadMedia));
+      const ext = uploaded[0].filename.split('.').pop().toLowerCase();
+      updates.media_type = ['mp4', 'mov', 'avi', 'webm'].includes(ext) ? 'video' : 'image';
+      updates.media_path = uploaded.length === 1 ? uploaded[0].url : JSON.stringify(uploaded.map(u => u.url));
+      updates.media_filename = uploaded.length === 1 ? uploaded[0].filename : JSON.stringify(uploaded.map(u => u.filename));
+    } else if (remove_media === 'true') {
+      updates.media_type = null;
+      updates.media_path = null;
+      updates.media_filename = null;
+    }
 
     const { data, error } = await supabase
       .from('posts').update(updates).eq('id', req.params.id).select().single();
-
     if (error) throw error;
+
+    // Update groups if provided
+    if (group_ids) {
+      const parsedGroupIds = JSON.parse(group_ids);
+      await supabase.from('post_groups').delete().eq('post_id', req.params.id);
+      if (parsedGroupIds.length > 0) {
+        await supabase.from('post_groups').insert(
+          parsedGroupIds.map(gid => ({ post_id: parseInt(req.params.id), group_id: gid, status: 'pending' }))
+        );
+      }
+    }
+
     res.json(data);
   } catch (err) {
     res.status(500).json({ error: err.message });
