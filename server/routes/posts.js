@@ -135,7 +135,7 @@ router.get('/:id', async (req, res) => {
 });
 
 // POST create new post
-router.post('/', upload.single('media'), async (req, res) => {
+router.post('/', upload.array('media', 6), async (req, res) => {
   try {
     const { title, content, campaign_id, scheduled_at, recurring, recurring_days, group_ids } = req.body;
 
@@ -152,12 +152,14 @@ router.post('/', upload.single('media'), async (req, res) => {
     let mediaPath = null;
     let mediaFilename = null;
 
-    if (req.file) {
-      const { url, filename } = await uploadMedia(req.file);
-      const ext = filename.split('.').pop().toLowerCase();
+    const files = req.files || [];
+    if (files.length > 0) {
+      const uploaded = await Promise.all(files.map(uploadMedia));
+      const ext = uploaded[0].filename.split('.').pop().toLowerCase();
       mediaType = ['mp4', 'mov', 'avi', 'webm'].includes(ext) ? 'video' : 'image';
-      mediaPath = url;
-      mediaFilename = filename;
+      // Store single URL for video, JSON array for images
+      mediaPath = uploaded.length === 1 ? uploaded[0].url : JSON.stringify(uploaded.map(u => u.url));
+      mediaFilename = uploaded.length === 1 ? uploaded[0].filename : JSON.stringify(uploaded.map(u => u.filename));
     }
 
     const status = scheduled_at ? 'scheduled' : 'pending';

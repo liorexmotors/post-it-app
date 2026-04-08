@@ -120,20 +120,22 @@ async function postToGroup({ groupUrl, content, mediaType, mediaPath }) {
 
     // Attach media if provided
     if (mediaType && mediaPath) {
-      const tempFile = await prepareMediaFile(mediaPath);
-      if (tempFile) {
-        try {
-          // Click the photo/video button
-          const mediaButtons = [
-            '[aria-label*="Photo"]',
-            '[aria-label*="photo"]',
-            '[aria-label*="Video"]',
-            'input[type="file"]',
-          ];
+      // Support both single URL and JSON array of URLs
+      let mediaPaths = [];
+      try {
+        const parsed = JSON.parse(mediaPath);
+        mediaPaths = Array.isArray(parsed) ? parsed : [mediaPath];
+      } catch {
+        mediaPaths = [mediaPath];
+      }
 
+      const tempFiles = (await Promise.all(mediaPaths.map(prepareMediaFile))).filter(Boolean);
+      if (tempFiles.length > 0) {
+        try {
           let fileInput = await page.$('input[type="file"]');
           if (!fileInput) {
-            for (const sel of mediaButtons.slice(0, -1)) {
+            const mediaButtons = ['[aria-label*="Photo"]', '[aria-label*="photo"]', '[aria-label*="Video"]'];
+            for (const sel of mediaButtons) {
               const btn = await page.$(sel);
               if (btn) {
                 await btn.click();
@@ -145,11 +147,11 @@ async function postToGroup({ groupUrl, content, mediaType, mediaPath }) {
           }
 
           if (fileInput) {
-            await fileInput.setInputFiles(tempFile);
-            await randomDelay(2000, 4000); // Wait for upload
+            await fileInput.setInputFiles(tempFiles);
+            await randomDelay(2000, 4000);
           }
         } finally {
-          try { fs.unlinkSync(tempFile); } catch { /* ignore */ }
+          tempFiles.forEach(f => { try { fs.unlinkSync(f); } catch { /* ignore */ } });
         }
       }
     }
