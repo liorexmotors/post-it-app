@@ -42,7 +42,7 @@ router.get('/', async (req, res) => {
       .select(`
         *,
         campaigns(name),
-        post_groups(count, status)
+        post_groups(status)
       `)
       .order('scheduled_at', { ascending: false, nullsFirst: false })
       .order('created_at', { ascending: false })
