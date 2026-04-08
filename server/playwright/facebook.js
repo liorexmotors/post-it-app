@@ -132,23 +132,53 @@ async function postToGroup({ groupUrl, content, mediaType, mediaPath }) {
       const tempFiles = (await Promise.all(mediaPaths.map(prepareMediaFile))).filter(Boolean);
       if (tempFiles.length > 0) {
         try {
-          let fileInput = await page.$('input[type="file"]');
-          if (!fileInput) {
-            const mediaButtons = ['[aria-label*="Photo"]', '[aria-label*="photo"]', '[aria-label*="Video"]'];
-            for (const sel of mediaButtons) {
-              const btn = await page.$(sel);
-              if (btn) {
-                await btn.click();
-                await randomDelay(800, 1200);
-                fileInput = await page.$('input[type="file"]');
-                break;
-              }
+          // Use FileChooser interception — works for both single and multiple files
+          // regardless of whether the input has the "multiple" attribute
+          const mediaButtons = [
+            '[aria-label*="Photo"]',
+            '[aria-label*="photo"]',
+            '[aria-label*="Video"]',
+            '[aria-label*="תמונה"]',
+          ];
+
+          let triggered = false;
+
+          // Set up file chooser listener BEFORE clicking
+          const fileChooserPromise = page.waitForEvent('filechooser', { timeout: 8000 }).catch(() => null);
+
+          // Try clicking a media button to open file chooser
+          for (const sel of mediaButtons) {
+            const btn = await page.$(sel);
+            if (btn) {
+              await btn.click();
+              triggered = true;
+              break;
             }
           }
 
-          if (fileInput) {
-            await fileInput.setInputFiles(tempFiles);
-            await randomDelay(2000, 4000);
+          // If no button found, try clicking the file input directly
+          if (!triggered) {
+            const fileInput = await page.$('input[type="file"]');
+            if (fileInput) {
+              await fileInput.click();
+              triggered = true;
+            }
+          }
+
+          if (triggered) {
+            const fileChooser = await fileChooserPromise;
+            if (fileChooser) {
+              // FileChooser API supports multiple files regardless of input attribute
+              await fileChooser.setFiles(tempFiles);
+              await randomDelay(2000, 4000);
+            } else {
+              // Fallback: direct setInputFiles with first file only
+              const fileInput = await page.$('input[type="file"]');
+              if (fileInput) {
+                await fileInput.setInputFiles(tempFiles[0]);
+                await randomDelay(2000, 4000);
+              }
+            }
           }
         } finally {
           tempFiles.forEach(f => { try { fs.unlinkSync(f); } catch { /* ignore */ } });
