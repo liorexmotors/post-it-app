@@ -88,32 +88,45 @@ async function postToGroup({ groupUrl, content, mediaType, mediaPath }) {
     await page.goto(groupUrl, { waitUntil: 'domcontentloaded', timeout: 30000 });
     await randomDelay(2000, 3500);
 
-    // Find the "Write something" compose box
+    // Find the "Write something" compose box — broad selectors, first match wins
     const composeSelectors = [
+      '[aria-label*="Write something"]',
+      '[aria-label*="כתוב משהו"]',
+      '[aria-label*="What\'s on your mind"]',
+      '[aria-label*="מה אתה חושב"]',
       '[data-testid="status-attachment-mentions-input"]',
-      '[aria-label="Write something..."]',
-      '[aria-label="כתוב משהו..."]',
-      'div[role="button"][tabindex="0"]',
+      'div[contenteditable="true"]',
+      'div[role="textbox"]',
     ];
 
     let clicked = false;
     for (const sel of composeSelectors) {
       try {
         const el = await page.$(sel);
-        if (el) {
+        if (el && await el.isVisible()) {
           await el.click();
           clicked = true;
+          console.log(`[Playwright] Composer opened with: ${sel}`);
           break;
         }
       } catch { /* try next */ }
     }
 
     if (!clicked) {
-      // Last resort: try to find any clickable area that opens composer
-      await page.click('div[role="button"]:first-child', { timeout: 5000 }).catch(() => {});
+      console.warn('[Playwright] Could not find composer, trying page click fallback');
+      // Try clicking anywhere in the main feed area
+      await page.click('main', { timeout: 5000 }).catch(() => {});
     }
 
     await randomDelay(1500, 2500);
+
+    // Verify composer is open by checking for editable area
+    const editable = await page.$('div[contenteditable="true"], div[role="textbox"]');
+    if (!editable) {
+      // Try one more time to open the composer
+      const retryEl = await page.$('[aria-label*="Write"], [aria-label*="כתוב"], [placeholder*="Write"], [placeholder*="כתוב"]');
+      if (retryEl) { await retryEl.click(); await randomDelay(1000, 1500); }
+    }
 
     // Type content with human-like speed
     await humanType(page, content);
@@ -186,30 +199,82 @@ async function postToGroup({ groupUrl, content, mediaType, mediaPath }) {
       }
     }
 
-    await randomDelay(800, 1200);
+    await randomDelay(1200, 2000);
 
-    // Click Post button
+    // Click Post button — try many selector strategies
     const postSelectors = [
+      // aria-label variants (Hebrew + English)
+      '[aria-label="פרסם"]',
       '[aria-label="Post"]',
+      '[aria-label*="פרסם"]',
+      '[aria-label*="Post"]',
+      // data-testid
       '[data-testid="react-composer-post-button"]',
-      'button:has-text("Post")',
+      // role=button with text
+      'div[role="button"]:has-text("פרסם")',
+      'div[role="button"]:has-text("Post")',
+      // plain button with text
       'button:has-text("פרסם")',
+      'button:has-text("Post")',
+      // span inside button
+      'button span:has-text("פרסם")',
+      'button span:has-text("Post")',
     ];
 
     let posted = false;
+
+    // Wait a bit for the button to become enabled after typing/media
+    await page.waitForTimeout(1000);
+
     for (const sel of postSelectors) {
       try {
         const btn = await page.$(sel);
-        if (btn && await btn.isEnabled()) {
+        if (!btn) continue;
+        const visible = await btn.isVisible().catch(() => false);
+        const enabled = await btn.isEnabled().catch(() => false);
+        console.log(`[Playwright] Post btn "${sel}": visible=${visible} enabled=${enabled}`);
+        if (visible && enabled) {
           await btn.click();
           posted = true;
+          console.log(`[Playwright] Clicked Post button with: ${sel}`);
           await randomDelay(2000, 3000);
           break;
         }
-      } catch { /* try next */ }
+      } catch (e) {
+        console.log(`[Playwright] Selector "${sel}" failed: ${e.message}`);
+      }
+    }
+
+    // Last resort: find ANY enabled button near the composer and click it
+    if (!posted) {
+      console.warn('[Playwright] Standard selectors failed, trying last resort...');
+      try {
+        // Find all buttons on page, look for one that says פרסם/Post
+        const allBtns = await page.$$('button, div[role="button"]');
+        for (const btn of allBtns) {
+          const text = await btn.innerText().catch(() => '');
+          const label = await btn.getAttribute('aria-label').catch(() => '');
+          if ((text.includes('פרסם') || text.includes('Post') || label.includes('פרסם') || label.includes('Post'))) {
+            const enabled = await btn.isEnabled().catch(() => false);
+            if (enabled) {
+              await btn.click();
+              posted = true;
+              console.log(`[Playwright] Last resort: clicked button with text "${text}" / label "${label}"`);
+              await randomDelay(2000, 3000);
+              break;
+            }
+          }
+        }
+      } catch (e) {
+        console.error('[Playwright] Last resort failed:', e.message);
+      }
     }
 
     if (!posted) {
+      // Take a screenshot for debugging
+      const screenshotPath = path.join(os.tmpdir(), `postit_fail_${Date.now()}.png`);
+      await page.screenshot({ path: screenshotPath, fullPage: false }).catch(() => {});
+      console.error(`[Playwright] Screenshot saved: ${screenshotPath}`);
       throw new Error('Could not find Post button');
     }
 
